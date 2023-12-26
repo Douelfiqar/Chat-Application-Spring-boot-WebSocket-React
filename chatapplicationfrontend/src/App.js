@@ -4,6 +4,7 @@ import SockJS from 'sockjs-client';
 import Login from './component/Login';
 import ChatRoom from './component/ChatRoom';
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
+import Dashboard from './component/Dashboard';
 
 function App() {
 
@@ -14,6 +15,7 @@ function App() {
       <Routes>
         <Route exact path="/" element={<Login />} /> 
         <Route exact path="/chatroom" element={<ChatRoom />} />
+        <Route exact path="/dashboard" element={<Dashboard />} />
       </Routes>
       </BrowserRouter>
     </div>

@@ -7,8 +7,12 @@ import SockJS from 'sockjs-client';
 const ChatRoom = () => {
     const [users, setUsers] = useState([]);
     const [conversationSelected, setConversationSelected] = useState("")
-    const {username, firstName, lastName, permission} = useUserContext()
+    const [key, setKey] = useState(false)
     
+    setTimeout(function() {
+      // Code to be executed after a 0.5-second delay
+  }, 50);
+    const {username, firstName, lastName, permission, imgUrl} = useUserContext()
 
     const [message, setMessage] = useState([]);
     const [stompClient, setStompClient] = useState(null);
@@ -16,31 +20,25 @@ const ChatRoom = () => {
     const [messagePublicRoom, setMessagePublicRoom] = useState([]);
 
     const connection = () => {
-        const socket = new SockJS('http://localhost:8080/gs-guide-websocket');
-        const client = Stomp.over(socket);
+    
+      const socket = new SockJS('http://localhost:8080/gs-guide-websocket');
+      const client = Stomp.over(socket);
 
-
-        client.connect({}, () => {
-
+      client.connect({}, () => {
+        
           client.subscribe(`/user/${username}/queue/messages`, (message) => {
             const receivedMessage = JSON.parse(message.body);
             setMessage((prevMessage) => [...prevMessage, receivedMessage]);
           });
 
-          client.subscribe("/chatroom/public", (message) => {
-            console.log(message);
-
-            // const receivedMessage1 = JSON.parse(message.body);
-            handleReceivedPublicRoomMessage(JSON.parse(message.body));
-            // setMessagePublicRoom((prevMessage) => [...prevMessage, receivedMessage1]);
-          });
-
+          client.subscribe("/chatroom/public", sendPublicMessage);
+        
         });
+        
+        const sendPublicMessage = (message) => {
+            handleReceivedPublicRoomMessage(JSON.parse(message.body));
+        }
 
-        const handleReceivedPublicRoomMessage = (receivedMessage) => {
-          setMessagePublicRoom((prevMessage) => [...prevMessage, receivedMessage]);
-        };
-    
     
         setStompClient(client);
     
@@ -51,49 +49,65 @@ const ChatRoom = () => {
           }
         };
     
-      }
+    }
 
+    const handleReceivedPublicRoomMessage = (receivedMessage) => {
+      console.log(receivedMessage);
+      setMessagePublicRoom((prevMessages) => {
+        // Check if the received message is different from the latest message
+        const isDifferent = !prevMessages.length || receivedMessage.content !== prevMessages[prevMessages.length - 1].content;
+        console.log(prevMessages);
+        // Update the state only if the message is different
+        return isDifferent ? [...prevMessages, receivedMessage] : prevMessages;
+      });
+    };
+    
+    const sendMessage = () => {
+      if (stompClient && stompClient.connected) {
+        if(conversationSelected === "publicRoom"){
 
-      const sendMessage = () => {
-        if (stompClient && stompClient.connected) {
-          if(conversationSelected === "publicRoom"){
-            var messageToSave = {
-              content: inputMessage,
-              usernameSender : username,
-              usernameReceiver : "publicRoom"
-            }
-            
-            stompClient.send('/app/publicRoomLink', {}, JSON.stringify(messageToSave));
-            
-          }else{
-
-              var newMessageValues = {
-                content: inputMessage,
-                usernameSender: username,
-                usernameReceiver: conversationSelected
-              };
-        
-              stompClient.send('/app/chat', {}, JSON.stringify(newMessageValues));
-              var messageToSave = {
-                id: 1,
-                userSender : {
-                  username: username,
-                  firstName: firstName,
-                  lastName: lastName
-                },
-                userReceiver : {
-                  username: conversationSelected
-                },
-                message:{
-                  content: inputMessage
-                }
-              }
-
-              setMessage((prevMessage) => [...prevMessage, messageToSave]);
-            }
-            
+          var messageToSave = {
+            content: inputMessage,
+            usernameSender : username,
+            // usernameReceiver : "publicRoom",
+            imageUrl: imgUrl,
+            date: new Date()
           }
-      };
+          
+          stompClient.send('/app/publicRoomLink', {}, JSON.stringify(messageToSave));
+          
+        }else{
+
+            var newMessageValues = {
+              content: inputMessage,
+              usernameSender: username,
+              usernameReceiver: conversationSelected,
+              imgUrl: imgUrl
+            };
+      
+            stompClient.send('/app/chat', {}, JSON.stringify(newMessageValues));
+
+            var messageToSave = {
+              id: 1,
+              userSender : {
+                username: username,
+                firstName: firstName,
+                lastName: lastName,
+                imgUrl: imgUrl
+              },
+              userReceiver : {
+                username: conversationSelected
+              },
+              message:{
+                content: inputMessage
+              }
+            }
+
+            setMessage((prevMessage) => [...prevMessage, messageToSave]);
+        }
+          setInputMessage("")
+      }
+    };
 
 
 
@@ -112,13 +126,17 @@ const ChatRoom = () => {
           // Code to be executed after a 0.5-second delay
       }, 50);
         connection()   
-    }, [])
+    }, [username])
 
     useEffect(()=>{
         setConversationSelected(users.length > 0 ? users[0].username : null)
     }, [users])
 
-
+    const formatDate = (timestamp) => {
+      const date = new Date(timestamp);
+      return `${date.toLocaleDateString()} ${date.toLocaleTimeString()}`;
+    };
+    
 
   return (
     <div className="font-sans bg-gray-100">
@@ -139,6 +157,15 @@ const ChatRoom = () => {
         ))}
 
       </ul>
+
+      {
+        (permission === "ADMIN" || permission === "MOD") && (
+          <button className="fixed px-36 md:px-24 bottom-4 left-4 bg-red-500 text-white p-2 rounded-md hover:bg-blue-600 focus:outline-none focus:ring focus:border-blue-300">
+            <a href="/dashboard">Dashboard</a>
+          </button>
+        )
+     }
+
     </div>
 
   
@@ -163,47 +190,131 @@ const ChatRoom = () => {
           )
           .map((msg, index) => (
             <div key={index} className={msg.userSender.username === username ? "flex items-end justify-end mb-4" : "flex items-start mb-4"}>
-              {msg.userSender.username !== username && (
-                <div className="flex-shrink-0 mr-2">
-                  <img src="https://placekitten.com/40/40" alt="User Avatar" className="w-8 h-8 rounded-full" />
-                </div>
+
+          {msg.userSender.username !== username && (
+                  <div className="flex-shrink-0 mr-2 relative group">
+                    <img
+                      src={msg.userReceiver.imgUrl}
+                      alt="User Avatar"
+                      className="w-8 h-8 rounded-full cursor-pointer hover:opacity-100 transition-opacity duration-300"
+                    />
+                    <div className="absolute left-0 -mt-4 -ml-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                      <div className="font-normal tracking-wider capitalize mt-5 text-xs">
+                        {msg.userReceiver.username}
+                      </div>
+                    </div>
+                  </div>
+          )}
+
+              {msg.userSender.username === username && (
+                      <div className="flex items-center space-x-2 text-sm mr-2 text-gray-500 mt-2">
+                        <div className="bg-gray-300 w-1 h-1 rounded-full"></div>
+                        <div>{formatDate(new Date())}</div>
+                      </div>
               )}
+
               <div key={index} className={msg.userSender.username === username ? "bg-gray-300 p-2 rounded-md" : "bg-blue-500 text-white p-2 rounded-md"}>
                 {msg.message.content}
               </div>
-              {msg.userSender.username === username && (
-                <div className="flex-shrink-0 ml-2">
-                  <img src="https://placekitten.com/40/40" alt="User Avatar" className="w-8 h-8 rounded-full" />
+
+
+              {msg.userSender.username !== username && (
+                <div className="flex items-center space-x-2 text-sm mr-2 text-gray-500 mt-2">
+                  <div className="bg-gray-300 w-1 h-1 rounded-full"></div>
+                  <div>{formatDate(new Date())}</div>
                 </div>
               )}
+
+              
+         {msg.userSender.username === username && (
+            <div className="flex-shrink-0 ml-2 relative group">
+              <img
+                src={imgUrl}
+                alt="User Avatar"
+              className="w-8 h-8 rounded-full cursor-pointer hover:opacity-100 transition-opacity duration-300"
+              />
+              <div className="absolute left-0 -mt-4 -ml-5 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                <div className="font-normal tracking-wider capitalize mt-5 text-xs">
+                  {msg.userSender.username}
+                </div>
+              </div>
+            </div>
+          )}
+              
             </div>
           ))
           }
 
 
-        {conversationSelected === "publicRoom" &&
-         messagePublicRoom
-          .map((msg, index) => (
-
-            <div key={index} className={msg.usernameSender === username ? "flex items-end justify-end mb-4" : "flex items-start mb-4"}>
-              {msg.usernameSender !== username && (
-                <div className="flex-shrink-0 mr-2">
-                  <img src="https://placekitten.com/40/40" alt="User Avatar" className="w-8 h-8 rounded-full" />
-                </div>
-              )}
-              <div key={index} className={msg.usernameSender === username ? "bg-gray-300 p-2 rounded-md" : "bg-blue-500 text-white p-2 rounded-md"}>
-                {msg.content}
-              </div>
-
-              {msg.usernameSender === username && (
-                <div className="flex-shrink-0 ml-2">
-                  <img src="https://placekitten.com/40/40" alt="User Avatar" className="w-8 h-8 rounded-full" />
-                </div>
-              )}
-
+       {conversationSelected === "publicRoom" &&
+  messagePublicRoom.map((msg, index) => (
+    <div
+      key={index}
+      className={
+        msg.usernameSender === username
+          ? "flex items-end justify-end mb-4"
+          : "flex items-start mb-4"
+      }
+    >
+      {msg.usernameSender !== username && (
+        <div className="flex-shrink-0 mr-2 relative group">
+          <img
+            src={msg.imageUrl}
+            alt="User Avatar"
+            className="w-8 h-8 rounded-full cursor-pointer hover:opacity-100 transition-opacity duration-300"
+          />
+          <div className="absolute left-0 -mt-4 -ml-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+            <div className="font-normal tracking-wider capitalize mt-5 text-xs">
+              {msg.usernameSender}
             </div>
-          )
-          )}
+          </div>
+        </div>
+      )}
+
+
+      {msg.usernameSender === username && (
+        <div className="flex items-center space-x-2 text-sm mr-2 text-gray-500 mt-2">
+          <div className="bg-gray-300 w-1 h-1 rounded-full"></div>
+          <div>{formatDate(msg.date)}</div>
+        </div>
+      )}
+
+
+      <div
+        key={index}
+        className={
+          msg.usernameSender === username
+            ? "bg-gray-300 p-2 rounded-md"
+            : "bg-blue-500 text-white p-2 rounded-md"
+        }
+      >
+        {msg.content}
+      </div>
+
+
+      {msg.usernameSender !== username && (
+        <div className="flex items-center space-x-2 text-sm mr-2 text-gray-500 mt-2">
+          <div className="bg-gray-300 w-1 h-1 rounded-full"></div>
+          <div>{formatDate(msg.date)}</div>
+        </div>
+      )}
+      {msg.usernameSender === username && (
+        <div className="flex-shrink-0 ml-2 relative group">
+          <img
+            src={imgUrl}
+            alt="User Avatar"
+           className="w-8 h-8 rounded-full cursor-pointer hover:opacity-100 transition-opacity duration-300"
+          />
+          <div className="absolute left-0 -mt-4 -ml-5 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+            <div className="font-normal tracking-wider capitalize mt-5 text-xs">
+              {username}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  ))}
+
 
 
       </div>
@@ -211,7 +322,7 @@ const ChatRoom = () => {
   
       <div className="bg-gray-200 p-4">
         <div className="flex">
-          <input onChange={(e) => setInputMessage(e.target.value)} type="text" placeholder="Type your message..." className="flex-1 border rounded-md p-2 focus:outline-none focus:border-blue-500" />
+          <input value={inputMessage} onChange={(e) => setInputMessage(e.target.value)} type="text" placeholder="Type your message..." className="flex-1 border rounded-md p-2 focus:outline-none focus:border-blue-500" />
           <button onClick={sendMessage} className="ml-2 bg-blue-500 text-white p-2 rounded-md hover:bg-blue-600 focus:outline-none focus:ring focus:border-blue-300">Send</button>
         </div>
       </div>

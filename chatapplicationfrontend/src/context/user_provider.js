@@ -1,5 +1,5 @@
 import axios from "axios"
-import React, { useContext, useReducer } from "react"
+import React, { useContext, useEffect, useReducer } from "react"
 import { LOGIN_USER } from "../action"
 import reducer from "../reducers/user_reducer"
 
@@ -7,8 +7,10 @@ const initialState = {
     username: "",
     firstName: "",
     lastName: "",
-    permission: ""
+    permission: "",
+    imgUrl: ""
 }
+
 const UserContext = React.createContext()
 
 export const UserProvider = ({children}) => {
@@ -25,14 +27,15 @@ export const UserProvider = ({children}) => {
             }
         })
 
-        console.log(response);
+        
         if(response.status == 200){
             var username = response.data.username
             var firstName = response.data.firstName
             var lastName = response.data.lastName
             var permission = response.data.permission
-
-            dispatch({type: LOGIN_USER, payload: {username, firstName, lastName, permission}})
+            var imgUrl =  response.data.imgUrl
+            console.log(imgUrl);
+            dispatch({type: LOGIN_USER, payload: {username, firstName, lastName, permission, imgUrl}})
         }
     }
 

@@ -4,8 +4,8 @@ const user_reducer = (state, action) => {
 
     if(action.type === LOGIN_USER){
 
-        const {username, firstName, lastName, permission} = action.payload
-        return {...state, username:username, firstName:firstName, lastName:lastName, permission:permission}
+        const {username, firstName, lastName, permission, imgUrl} = action.payload
+        return {...state, username:username, firstName:firstName, lastName:lastName, permission:permission, imgUrl: imgUrl}
     }
 
 }

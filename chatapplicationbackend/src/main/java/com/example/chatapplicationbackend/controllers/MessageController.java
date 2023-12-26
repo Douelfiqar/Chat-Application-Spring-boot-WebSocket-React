@@ -16,6 +16,7 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Date;
+import java.util.UUID;
 
 @RestController
 @AllArgsConstructor
@@ -33,9 +34,6 @@ public class MessageController {
     private final SimpMessagingTemplate messagingTemplate;
     @MessageMapping("/chat")
     public void processMessage(@Payload MessageRequestDto messageDto) {
-        //String savedMsg = chatMessageService.save(chatMessage);
-        //User user = message.getReceiverMessage().stream().findFirst().orElseThrow();
-
         User sender = userRepository.findUserByUsername(messageDto.usernameSender());
         User receiver = userRepository.findUserByUsername(messageDto.usernameReceiver());
 
@@ -44,20 +42,19 @@ public class MessageController {
                 .content(messageDto.content())
                 .build();
 
-        //message = messageRepository.save(message);
-        /*ChatNotification chatNotification = ChatNotification.builder()
+      message = messageRepository.save(message);
+        ChatNotification chatNotification = ChatNotification.builder()
                 .message(message)
                 .userReceiver(receiver)
                 .userSender(sender)
-                .build();*/
+                .build();
 
-        //chatNotification = chatNotificationRepository.save(chatNotification);
+       chatNotificationRepository.save(chatNotification);
 
         messagingTemplate.convertAndSendToUser(
                 receiver.getUsername(), "/queue/messages",
                 new ChatNotification(
-
-                        1,
+                        UUID.randomUUID(),
                         sender,
                         receiver,
                         message

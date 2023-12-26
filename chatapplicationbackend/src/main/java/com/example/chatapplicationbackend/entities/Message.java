@@ -1,5 +1,6 @@
 package com.example.chatapplicationbackend.entities;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -22,8 +23,7 @@ public class Message {
     private Date timeStamp;
     private String content;
     @OneToMany(mappedBy = "message", fetch = FetchType.EAGER)
+    @JsonIgnore
     private Collection<ChatNotification> chatNotification = new ArrayList<>();
-    //@OneToMany(mappedBy = "message")
-   // private Collection<Groupe> receiverMessage;
 
 }

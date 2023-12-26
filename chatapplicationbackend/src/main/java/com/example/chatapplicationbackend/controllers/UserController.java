@@ -3,6 +3,7 @@ package com.example.chatapplicationbackend.controllers;
 import com.example.chatapplicationbackend.entities.User;
 import com.example.chatapplicationbackend.entities.dtos.LoginDto;
 import com.example.chatapplicationbackend.entities.dtos.Status;
+import com.example.chatapplicationbackend.entities.enums.Permission;
 import com.example.chatapplicationbackend.repositories.UserRepository;
 import com.example.chatapplicationbackend.services.UserService;
 import lombok.AllArgsConstructor;
@@ -24,7 +25,31 @@ public class UserController {
     private  final UserRepository userRepository;
     @GetMapping
     public List<User> getAllUsers() {
-        return userService.getAllUsers();
+        List<User> userList = userService.getAllUsers().stream()
+                .filter(user -> user.getPermission() == Permission.USER)
+                .collect(Collectors.toList());
+
+        return userList;
+    }
+    @GetMapping("/getAdmins")
+    public List<User> getUsersAdmin() {
+        List<User> userList = userService.getAllUsers().stream()
+                .filter(user -> user.getPermission() == Permission.ADMIN)
+                .collect(Collectors.toList());
+        return userList;
+    }
+    @PostMapping("/moveUserToAdmin")
+    public void moveUserToAdmin(@RequestBody String username) {
+        User user = userRepository.findUserByUsername(username);
+        user.setPermission(Permission.ADMIN);
+
+        userRepository.save(user);
+    }
+    @PostMapping("/moveAdminToUser")
+    public void moveAdminToUser(@RequestBody String username) {
+        User user = userRepository.findUserByUsername(username);
+        user.setPermission(Permission.USER);
+        userRepository.save(user);
     }
 
     @GetMapping("/connectedUsers")
@@ -33,10 +58,10 @@ public class UserController {
         List<User> userConnectedList = userList.stream()
                 .filter(user -> user.getStatus() == Status.ONLINE)
                 .collect(Collectors.toList());
-        //userConnectedList.stream().forEach(System.out::println);
-        System.out.println("hh");
+
         return userConnectedList;
     }
+
 
     @GetMapping("/{userId}")
     public ResponseEntity<User> getUserById(@PathVariable int userId) {
@@ -67,8 +92,8 @@ public class UserController {
     }
 
     @DeleteMapping("/{userId}")
-    public ResponseEntity<Void> deleteUser(@PathVariable int userId) {
-        userService.deleteUser(userId);
+    public ResponseEntity<Void> deleteUser(@PathVariable String username) {
+        userRepository.deleteUserByUsername(username);
         return ResponseEntity.noContent().build();
     }
 }

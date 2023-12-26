@@ -2,6 +2,7 @@ package com.example.chatapplicationbackend.entities;
 
 import com.example.chatapplicationbackend.entities.dtos.Status;
 import com.example.chatapplicationbackend.entities.enums.Permission;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -31,11 +32,12 @@ public class User {
     private Date lastConnectionTime;
     @Enumerated(EnumType.STRING)
     private Status status;
+    private String imgUrl;
 
     @OneToMany(mappedBy = "userSender", fetch = FetchType.EAGER)
+    @JsonIgnore
     private Collection<ChatNotification> message_sended = new ArrayList<>();
     @OneToMany(mappedBy = "userReceiver", fetch = FetchType.EAGER)
+    @JsonIgnore
     private Collection<ChatNotification> message_received = new ArrayList<>();
-  //  @OneToMany(mappedBy = "user")
-   // private Collection<Groupe> groupe;
 }
