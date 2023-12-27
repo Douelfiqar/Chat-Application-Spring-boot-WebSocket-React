@@ -22,4 +22,5 @@ public class Log {
     @DateTimeFormat(pattern = "yyyy-MM-dd")
     private Date date;
     private LogType type;
+    private String content;
 }

@@ -3,8 +3,8 @@ package com.example.chatapplicationbackend.services;
 import com.example.chatapplicationbackend.entities.User;
 import com.example.chatapplicationbackend.repositories.UserRepository;
 import lombok.AllArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.mindrot.jbcrypt.BCrypt;
 
 import java.util.List;
 import java.util.Optional;
@@ -18,7 +18,17 @@ public class UserService {
     public List<User> getAllUsers() {
         return userRepository.findAll();
     }
-
+    // Hash a password using BCrypt
+    public String hashPassword(String plainTextPassword) {
+        // Gensalt's log_rounds parameter determines the complexity
+        // The higher the value, the more work the hashing function will do
+        int logRounds = 12;
+        String hashedPassword = BCrypt.hashpw(plainTextPassword, BCrypt.gensalt(logRounds));
+        return hashedPassword;
+    }
+    public boolean checkPassword(String plainTextPassword, String hashedPassword) {
+        return BCrypt.checkpw(plainTextPassword, hashedPassword);
+    }
 
     public Optional<User> getUserById(int userId) {
         return userRepository.findById(userId);

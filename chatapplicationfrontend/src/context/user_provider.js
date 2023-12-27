@@ -34,7 +34,7 @@ export const UserProvider = ({children}) => {
             var lastName = response.data.lastName
             var permission = response.data.permission
             var imgUrl =  response.data.imgUrl
-            console.log(imgUrl);
+
             dispatch({type: LOGIN_USER, payload: {username, firstName, lastName, permission, imgUrl}})
         }
     }

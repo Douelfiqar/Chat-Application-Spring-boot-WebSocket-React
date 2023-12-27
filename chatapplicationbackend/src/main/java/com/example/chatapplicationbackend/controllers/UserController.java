@@ -7,6 +7,7 @@ import com.example.chatapplicationbackend.entities.enums.Permission;
 import com.example.chatapplicationbackend.repositories.UserRepository;
 import com.example.chatapplicationbackend.services.UserService;
 import lombok.AllArgsConstructor;
+import org.mindrot.jbcrypt.BCrypt;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -23,6 +24,7 @@ public class UserController {
 
     private final UserService userService;
     private  final UserRepository userRepository;
+
     @GetMapping
     public List<User> getAllUsers() {
         List<User> userList = userService.getAllUsers().stream()
@@ -69,16 +71,29 @@ public class UserController {
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
-
-    @PostMapping
-    public ResponseEntity<User> authentification(@RequestBody LoginDto loginDto) {
-        User user1 = userRepository.findUserByUsername(loginDto.username());
-        if(user1 != null) {
-            if(loginDto.password().equals(user1.getPassword()))
-                return ResponseEntity.ok(user1);
-        }
-        return ResponseEntity.notFound().build();
+    @PostMapping("/closeSession")
+    public ResponseEntity<Void> closeSession(String username){
+        User user = userRepository.findUserByUsername(username);
+        user.setStatus(Status.OFFLINE);
+        userRepository.save(user);
+        return ResponseEntity.ok().build();
     }
+    @PostMapping
+    public ResponseEntity<User> authentication(@RequestBody LoginDto loginDto) {
+
+        User user = userRepository.findUserByUsername(loginDto.username());
+
+        if (BCrypt.checkpw(loginDto.password(), user.getPassword())) {
+            user.setStatus(Status.ONLINE);
+            userRepository.save(user);
+            return ResponseEntity.ok(user);
+        }
+
+
+        // Authentication failed
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+    }
+
 
     @PutMapping("/{userId}")
     public ResponseEntity<User> updateUser(@PathVariable int userId, @RequestBody User updatedUser) {

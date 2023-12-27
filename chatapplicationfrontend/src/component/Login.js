@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useUserContext } from '../context/user_provider';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 
 const Login = () => {
   const [username, setUsername] = useState('');
@@ -12,6 +13,7 @@ const Login = () => {
   const auth = async (e) => {
     e.preventDefault();
     loginFunction(username, password);
+    
     navigate("/chatroom")
     // cart, clear_cart, remove_item, toggleCartAmount 
   };

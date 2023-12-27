@@ -3,6 +3,8 @@ import React, { useContext, useEffect, useState } from 'react'
 import { useUserContext } from '../context/user_provider';
 import Stomp from 'stompjs';
 import SockJS from 'sockjs-client';
+import Audio from './Audio';
+import { Link } from 'react-router-dom';
 
 const ChatRoom = () => {
     const [users, setUsers] = useState([]);
@@ -19,6 +21,9 @@ const ChatRoom = () => {
     const [inputMessage, setInputMessage] = useState('');
     const [messagePublicRoom, setMessagePublicRoom] = useState([]);
 
+    const logout = async () => {
+      const response1 = await axios.post("http://localhost:8080/closeSession") 
+    }
     const connection = () => {
     
       const socket = new SockJS('http://localhost:8080/gs-guide-websocket');
@@ -45,6 +50,7 @@ const ChatRoom = () => {
         return () => {
           // Disconnect only if the client is connected
           if (client && client.connected) {
+            logout()
             client.disconnect();
           }
         };
@@ -161,7 +167,7 @@ const ChatRoom = () => {
       {
         (permission === "ADMIN" || permission === "MOD") && (
           <button className="fixed px-36 md:px-24 bottom-4 left-4 bg-red-500 text-white p-2 rounded-md hover:bg-blue-600 focus:outline-none focus:ring focus:border-blue-300">
-            <a href="/dashboard">Dashboard</a>
+            <Link to="/dashboard">Dashboard</Link>
           </button>
         )
      }
@@ -261,7 +267,7 @@ const ChatRoom = () => {
           <img
             src={msg.imageUrl}
             alt="User Avatar"
-            className="w-8 h-8 rounded-full cursor-pointer hover:opacity-100 transition-opacity duration-300"
+            className="w-8 h-8 rounded-full cursor-pointer object-cover hover:opacity-100 transition-opacity duration-300"
           />
           <div className="absolute left-0 -mt-4 -ml-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
             <div className="font-normal tracking-wider capitalize mt-5 text-xs">
@@ -323,6 +329,7 @@ const ChatRoom = () => {
       <div className="bg-gray-200 p-4">
         <div className="flex">
           <input value={inputMessage} onChange={(e) => setInputMessage(e.target.value)} type="text" placeholder="Type your message..." className="flex-1 border rounded-md p-2 focus:outline-none focus:border-blue-500" />
+          <Audio />
           <button onClick={sendMessage} className="ml-2 bg-blue-500 text-white p-2 rounded-md hover:bg-blue-600 focus:outline-none focus:ring focus:border-blue-300">Send</button>
         </div>
       </div>

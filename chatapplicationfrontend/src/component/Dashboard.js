@@ -8,7 +8,7 @@ const Dashboard = () => {
     const url = "http://localhost:8080/api/users"
   const [users, setUsers] = useState([]);
   const [admins, setAdmins] = useState([]);
-  const { username } = useUserContext()
+  const { username, permission } = useUserContext()
 
 
   const getAllUsers = async () => {
@@ -107,6 +107,7 @@ useEffect(()=>{
       </div>
 
       {/* Add ADMIN button for MOD */}
+      {permission === "ADMIN" &&
       <div className="mt-8">
         <h2 className="text-2xl font-bold mb-2">Add ADMIN (MOD)</h2>
        
@@ -144,6 +145,7 @@ useEffect(()=>{
       </div>
 
       </div>
+      }
     </div>
   );
 };

@@ -1,12 +1,15 @@
 package com.example.chatapplicationbackend.controllers;
 
 import com.example.chatapplicationbackend.entities.Log;
+import com.example.chatapplicationbackend.entities.dtos.LogDto;
+import com.example.chatapplicationbackend.entities.enums.LogType;
 import com.example.chatapplicationbackend.services.LogService;
 import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Date;
 import java.util.List;
 
 @RestController
@@ -29,9 +32,10 @@ public class LogController {
     }
 
     @PostMapping
-    public ResponseEntity<Log> createLog(@RequestBody Log log) {
-        Log createdLog = logService.createLog(log);
-        return ResponseEntity.ok(createdLog);
+    public ResponseEntity<Log> createLog(@RequestBody LogDto logDto) {
+        System.out.println(logDto.logType());
+
+        return ResponseEntity.ok(null);
     }
 
     @PutMapping("/{logId}")
